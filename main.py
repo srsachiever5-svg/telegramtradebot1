@@ -1,4 +1,4 @@
-import osimport os
+import os
 import telebot
 from flask import Flask
 from openai import OpenAI
