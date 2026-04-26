@@ -3,12 +3,22 @@ import telebot
 import time
 import threading
 import os
+from flask import Flask
 
+# 🔐 ENV variables
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-CHAT_ID = os.getenv("CHAT_ID")  # channel/group id
+CHAT_ID = os.getenv("CHAT_ID")
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
+# 🌐 Flask app (Render ke liye)
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Bot is running 🚀"
+
+# 🔹 Symbols
 SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
 
 # 🔹 Fetch data
@@ -38,7 +48,7 @@ def rsi(prices, period=14):
     rs = avg_gain / avg_loss
     return 100 - (100 / (1 + rs))
 
-# 🔹 Signal logic (improved)
+# 🔹 Signal logic
 def signal(symbol):
     prices = get_klines(symbol)
     price = prices[-1]
@@ -52,7 +62,7 @@ def signal(symbol):
     else:
         return "HOLD ⚖️", price, r, m
 
-# 🔹 Command
+# 🔹 Manual command
 @bot.message_handler(commands=['signal'])
 def send_signal(msg):
     text = "📊 *Live Signals*\n\n"
@@ -62,7 +72,7 @@ def send_signal(msg):
 
     bot.reply_to(msg, text, parse_mode="Markdown")
 
-# 🔹 Auto send
+# 🔹 Auto signal loop
 def auto():
     while True:
         try:
@@ -77,6 +87,14 @@ def auto():
 
         time.sleep(300)
 
-# 🔹 Run
-threading.Thread(target=auto).start()
-bot.infinity_polling()
+# 🔹 Start bot thread
+def run_bot():
+    bot.infinity_polling()
+
+if __name__ == "__main__":
+    threading.Thread(target=auto).start()
+    threading.Thread(target=run_bot).start()
+
+    # 🔥 IMPORTANT: PORT for Render
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
